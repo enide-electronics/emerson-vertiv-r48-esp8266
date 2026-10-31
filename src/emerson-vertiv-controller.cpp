@@ -13,6 +13,7 @@
 #include <ESPAsyncWebServer.h>
 
 #include "wifi.h" // Include WiFi credentials and configuration
+#include "nokia_display.h"
 
 // --- Pinout Configuration for multiple ESP controller cards ---
 //
@@ -22,7 +23,9 @@
 // MISO        | D6      | D9               | GPIO20
 // SCK         | D5      | D8               | GPIO19
 // CS          | D8      | D3               | GPIO21 (Flexible, can be any available GPIO)
-// INT         | D1      | D2               | GPIO2  (Flexible, can be any available GPIO)
+// INT         | Not connected (unused) | D2 | GPIO2
+// LCD SPI     | Shared D7 (DIN), D5 (SCLK); MISO D6 is unused by LCD
+// LCD control | D1 (D/C), D2 (CS), D3 (RST), D4 (PWM backlight / onboard LED)
 
 // Define the Chip Select pin for the MCP2515 CAN module
 const int SPI_CS_PIN = D8; // 15 is D8 on ESP8266 // 21; // 21 is D3 on XIAO ESP32C6
@@ -66,6 +69,9 @@ bool isCommandPending = false;
 unsigned long commandSentTime = 0;
 // Set the fixed delay for permanent commands to 45 seconds as requested
 const unsigned long PERMANENT_COMMAND_DELAY = 45000; // 45 seconds
+const unsigned long WIFI_CONNECT_TIMEOUT = 20000;
+const unsigned long ERROR_DISPLAY_DELAY = 5000;
+const unsigned long STATUS_DISPLAY_DELAY = 750;
 
 // --- HTML and JavaScript for the Web Page ---
 // This entire string will be sent to the client when they access the root URL.
@@ -304,31 +310,24 @@ float bytesToFloat(byte b[4]) {
 }
 
 void setup() {
-  pinMode(LED_BUILTIN, OUTPUT);
-  pinMode(D1, INPUT); // MCP2515 INT pin as input (unused in this sketch)
-  digitalWrite(LED_BUILTIN, HIGH); // Turn the LED off initially to indicate offline state
 
   Serial.begin(115200);
   Serial.println("ESP32 Web Server for Vertiv CAN Control");
+  nokiaDisplayBegin();
+  nokiaDisplayShowStatus("Booting", "Starting up");
+  delay(STATUS_DISPLAY_DELAY);
 
   // Initialize MCP2515 running at 8MHz with a baudrate of 125kb/s and the masks and filters disabled.
   if(CAN0.begin(MCP_ANY, CAN_125KBPS, MCP_8MHZ) == CAN_OK) {
     Serial.println("MCP2515 Initialized Successfully!");
+    nokiaDisplayShowStatus("MCP2515 found", "");
+    delay(STATUS_DISPLAY_DELAY);
   } else {
     Serial.println("Error Initializing MCP2515...");
-    // blink default LED 3 times to indicate error and restart
-    for (int i = 0; i < 3; i++) {
-      digitalWrite(LED_BUILTIN, LOW);
-      delay(250);
-      digitalWrite(LED_BUILTIN, HIGH);
-      delay(250);
-      
-      yield();
-    }
-
-    delay(1000);
-
+    nokiaDisplayShowStatus("MCP2515 error", "Reboot in 5s");
+    delay(ERROR_DISPLAY_DELAY);
     ESP.restart();
+    return;
   }
  
   // The Adafruit library's begin() function handles setting the bitrate.
@@ -339,21 +338,40 @@ void setup() {
 
   // --- WiFi Setup ---
   if (WIFI_AP_MODE) {
-    WiFi.softAP(ap_ssid, ap_password);
+    nokiaDisplayShowStatus("WiFi", "Connecting AP");
+    if (!WiFi.softAP(ap_ssid, ap_password)) {
+      Serial.println("Error starting WiFi access point.");
+      nokiaDisplayShowStatus("WiFi failed", "Reboot in 5s");
+      delay(ERROR_DISPLAY_DELAY);
+      ESP.restart();
+      return;
+    }
     Serial.print("Access Point created! IP Address: ");
     Serial.println(WiFi.softAPIP());
   } else {
+    nokiaDisplayShowStatus("WiFi", "Connecting");
     WiFi.begin(ssid, password);
-    while (WiFi.status() != WL_CONNECTED) {
+    const unsigned long wifiConnectStarted = millis();
+    while (WiFi.status() != WL_CONNECTED &&
+           millis() - wifiConnectStarted < WIFI_CONNECT_TIMEOUT) {
       delay(500);
       Serial.print(".");
+    }
+    if (WiFi.status() != WL_CONNECTED) {
+      Serial.println("\nWiFi connection failed.");
+      nokiaDisplayShowStatus("WiFi failed", "Reboot in 5s");
+      delay(ERROR_DISPLAY_DELAY);
+      ESP.restart();
+      return;
     }
     Serial.println("");
     Serial.print("Connected to WiFi! IP Address: ");
     Serial.println(WiFi.localIP());
   }
 
-  digitalWrite(LED_BUILTIN, LOW); // Turn the LED on to indicate we are now online
+  nokiaDisplayShowStatus("WiFi ok", "Connected");
+  delay(STATUS_DISPLAY_DELAY);
+  nokiaDisplayClear();
  
   // --- Web Server Routes Setup ---
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
@@ -511,6 +529,11 @@ const unsigned long CURRENT_LIMIT_DELAY = 1000; // 1 second delay
 void loop() {
   // Check for incoming CAN messages from the power supply
   processIncomingCanMessages();
+
+  const char *networkName = WIFI_AP_MODE ? ap_ssid : ssid;
+  const IPAddress ipAddress = WIFI_AP_MODE ? WiFi.softAPIP() : WiFi.localIP();
+  nokiaDisplayUpdate(outputVoltage, outputCurrent, outputCurrentLimit,
+                     networkName, ipAddress);
  
   // Sequentially request new data if no command is pending
   if (!isCommandPending) {
