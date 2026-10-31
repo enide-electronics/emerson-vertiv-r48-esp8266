@@ -12,17 +12,7 @@
 #include <ESPAsyncTCP.h>
 #include <ESPAsyncWebServer.h>
 
-// --- WiFi Configuration ---
-// Set this to true to create an Access Point, false to connect to a network.
-const bool WIFI_AP_MODE = false;
-
-// If WIFI_AP_MODE is true, these will be the AP credentials.
-const char* ap_ssid = "VerivR48_AP";
-const char* ap_password = "1234567890";
-
-// If WIFI_AP_MODE is false, these will be your network credentials.
-const char* ssid = "yourNetworkSSID";
-const char* password = "password1234";
+#include "wifi.h" // Include WiFi credentials and configuration
 
 // --- Pinout Configuration for multiple ESP controller cards ---
 //
