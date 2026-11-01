@@ -21,13 +21,28 @@ The R48 unit is accessible via the CAN bus. To use this project to control the R
 
 Connect the ESP8266 board to the MCP2515 board using the following pins. You can change them in the code if you want.
 
-MCP2515 Pin | ESP8266 Pin      | ESP8266 GPIO
-------------|------------------|----------------
-MOSI        | D7               | GPIO13
-MISO        | D6               | GPIO12
-SCK         | D5               | GPIO14
-CS          | D8               | GPIO15 (Flexible, can be any available GPIO)
-INT         | D1               | GPIO04 (Flexible, can be any available GPIO)
+| Lolin d1 mini | MCP2515 (pin)|
+----------------|---------------
+| D7            | SI      (5)  | 
+| D6            | SO      (4)  |
+| D5            | SCK     (6)  |
+| D8            | CS      (3)  | 
+| +3.3V         | VCC     (1)  | 
+| GND           | GND     (2)  | 
+| not connected | INT     (7)  |
+
+Optionally connect the Nokia 3310 LCD board using the following pins
+
+| Lolin D1 mini | LCD 3310 (pin)| 
+----------------|----------------
+| D7            | SDSI    (6)   |
+| D5            | SCLK    (7)   |
+| D4            | LED     (8)   | 
+| D3            | RES     (4)   | 
+| D2            | SCE     (3)   | 
+| D1            | D/C     (5)   | 
+| +3.3V         | VCC     (1)   |
+| GND           | GND     (2)   |
 
 Here's a reference pinout of the Lolin NodeMCU v3 board.
 <p align="center">
