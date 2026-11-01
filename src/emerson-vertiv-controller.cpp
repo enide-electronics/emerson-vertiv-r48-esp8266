@@ -310,7 +310,6 @@ float bytesToFloat(byte b[4]) {
 }
 
 void setup() {
-  uint16_t line = 0;
 
   Serial.begin(115200);
   Serial.println("ESP32 Web Server for Vertiv CAN Control");
