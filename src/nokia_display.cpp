@@ -4,7 +4,6 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_PCD8544.h>
 #include <string.h>
-#include <ctype.h>
 
 namespace {
 const uint8_t DISPLAY_DC_PIN = D1;
@@ -79,6 +78,19 @@ const TinyGlyph tinyFont[] PROGMEM = {
   {'U', {5, 5, 5, 5, 7}}, {'V', {5, 5, 5, 5, 2}},
   {'W', {5, 5, 7, 7, 5}}, {'X', {5, 5, 2, 5, 5}},
   {'Y', {5, 5, 2, 2, 2}}, {'Z', {7, 1, 2, 4, 7}},
+  {'a', {0, 3, 5, 7, 5}}, {'b', {4, 6, 5, 5, 6}},
+  {'c', {0, 3, 4, 4, 3}}, {'d', {1, 3, 5, 5, 3}},
+  {'e', {0, 2, 5, 6, 3}}, {'f', {1, 2, 7, 2, 2}},
+  {'g', {0, 3, 5, 3, 6}}, {'h', {4, 6, 5, 5, 5}},
+  {'i', {2, 0, 2, 2, 2}}, {'j', {1, 0, 1, 1, 6}},
+  {'k', {4, 5, 6, 5, 5}}, {'l', {2, 2, 2, 2, 1}},
+  {'m', {0, 7, 7, 5, 5}}, {'n', {0, 6, 5, 5, 5}},
+  {'o', {0, 2, 5, 5, 2}}, {'p', {0, 6, 5, 6, 4}},
+  {'q', {0, 3, 5, 3, 1}}, {'r', {0, 5, 6, 4, 4}},
+  {'s', {0, 3, 4, 2, 6}}, {'t', {2, 7, 2, 2, 1}},
+  {'u', {0, 5, 5, 5, 3}}, {'v', {0, 5, 5, 5, 2}},
+  {'w', {0, 5, 5, 7, 7}}, {'x', {0, 5, 2, 2, 5}},
+  {'y', {0, 5, 3, 1, 6}}, {'z', {0, 7, 1, 2, 7}},
   {'-', {0, 0, 7, 0, 0}}, {'_', {0, 0, 0, 0, 7}},
   {'.', {0, 0, 0, 0, 2}}, {':', {0, 2, 0, 2, 0}},
   {'%', {5, 1, 2, 4, 5}}, {'/', {1, 1, 2, 4, 4}}
@@ -93,9 +105,8 @@ bool canIconVisible(unsigned long now) {
 }
 
 void drawTinyCharacter(char character, int16_t x, int16_t y) {
-  const char normalized = static_cast<char>(toupper(static_cast<unsigned char>(character)));
   for (size_t glyphIndex = 0; glyphIndex < sizeof(tinyFont) / sizeof(tinyFont[0]); ++glyphIndex) {
-    if (pgm_read_byte(&tinyFont[glyphIndex].character) == normalized) {
+    if (pgm_read_byte(&tinyFont[glyphIndex].character) == character) {
       for (uint8_t row = 0; row < 5; ++row) {
         const uint8_t pixels = pgm_read_byte(&tinyFont[glyphIndex].rows[row]);
         for (uint8_t column = 0; column < 3; ++column) {
