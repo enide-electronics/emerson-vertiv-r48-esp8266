@@ -5,12 +5,14 @@
 #include <IPAddress.h>
 
 void nokiaDisplayBegin();
-void nokiaDisplayShowStatus(const char *line1, const char *line2);
+void nokiaDisplayAddAsLog(const char *line1, bool clearScreen = false);
 void nokiaDisplayClear();
+void nokiaDisplayNotifyCanMessage();
 void nokiaDisplayUpdate(float outputVoltage,
                         float outputCurrent,
                         float outputCurrentLimit,
                         const char *networkName,
-                        const IPAddress &ipAddress);
+                        const IPAddress &ipAddress,
+                        bool wifiOnline);
 
 #endif

@@ -310,24 +310,27 @@ float bytesToFloat(byte b[4]) {
 }
 
 void setup() {
+  uint16_t line = 0;
 
   Serial.begin(115200);
   Serial.println("ESP32 Web Server for Vertiv CAN Control");
   nokiaDisplayBegin();
-  nokiaDisplayShowStatus("Booting", "Starting up");
+  nokiaDisplayAddAsLog("Booting\n", true);
   delay(STATUS_DISPLAY_DELAY);
 
   // Initialize MCP2515 running at 8MHz with a baudrate of 125kb/s and the masks and filters disabled.
+  nokiaDisplayAddAsLog("MCP2515...");
   if(CAN0.begin(MCP_ANY, CAN_125KBPS, MCP_8MHZ) == CAN_OK) {
     Serial.println("MCP2515 Initialized Successfully!");
-    nokiaDisplayShowStatus("MCP2515 found", "");
+    nokiaDisplayAddAsLog("found\n");
     delay(STATUS_DISPLAY_DELAY);
   } else {
     Serial.println("Error Initializing MCP2515...");
-    nokiaDisplayShowStatus("MCP2515 error", "Reboot in 5s");
-    delay(ERROR_DISPLAY_DELAY);
-    ESP.restart();
-    return;
+    nokiaDisplayAddAsLog("error\n");
+    //nokiaDisplayAddAsLog("Reboot in 5s...\n");
+    //delay(ERROR_DISPLAY_DELAY);
+    //ESP.restart();
+    //return;
   }
  
   // The Adafruit library's begin() function handles setting the bitrate.
@@ -337,19 +340,20 @@ void setup() {
   CAN0.setMode(MCP_NORMAL);
 
   // --- WiFi Setup ---
-  if (WIFI_AP_MODE) {
-    nokiaDisplayShowStatus("WiFi", "Connecting AP");
+  nokiaDisplayAddAsLog("WiFi...");
+  if (WIFI_AP_MODE) {    
     if (!WiFi.softAP(ap_ssid, ap_password)) {
       Serial.println("Error starting WiFi access point.");
-      nokiaDisplayShowStatus("WiFi failed", "Reboot in 5s");
+      nokiaDisplayAddAsLog("failed\n");
+      nokiaDisplayAddAsLog("Reboot in 5s...\n");
       delay(ERROR_DISPLAY_DELAY);
       ESP.restart();
       return;
     }
     Serial.print("Access Point created! IP Address: ");
     Serial.println(WiFi.softAPIP());
+    nokiaDisplayAddAsLog("AP mode\n");
   } else {
-    nokiaDisplayShowStatus("WiFi", "Connecting");
     WiFi.begin(ssid, password);
     const unsigned long wifiConnectStarted = millis();
     while (WiFi.status() != WL_CONNECTED &&
@@ -359,7 +363,8 @@ void setup() {
     }
     if (WiFi.status() != WL_CONNECTED) {
       Serial.println("\nWiFi connection failed.");
-      nokiaDisplayShowStatus("WiFi failed", "Reboot in 5s");
+      nokiaDisplayAddAsLog("failed\n");
+      nokiaDisplayAddAsLog("Reboot in 5s...\n");
       delay(ERROR_DISPLAY_DELAY);
       ESP.restart();
       return;
@@ -367,11 +372,10 @@ void setup() {
     Serial.println("");
     Serial.print("Connected to WiFi! IP Address: ");
     Serial.println(WiFi.localIP());
+    nokiaDisplayAddAsLog("connected!\n");
   }
 
-  nokiaDisplayShowStatus("WiFi ok", "Connected");
-  delay(STATUS_DISPLAY_DELAY);
-  nokiaDisplayClear();
+  nokiaDisplayAddAsLog("WEB IF setup...");
  
   // --- Web Server Routes Setup ---
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
@@ -508,6 +512,11 @@ void setup() {
       request->send(400, "text/plain", "Invalid walk-in time value.");
     }
   });
+
+  nokiaDisplayAddAsLog("done\n");
+
+  delay(STATUS_DISPLAY_DELAY);
+  nokiaDisplayClear();
  
   // Start the web server
   server.begin();
@@ -532,8 +541,9 @@ void loop() {
 
   const char *networkName = WIFI_AP_MODE ? ap_ssid : ssid;
   const IPAddress ipAddress = WIFI_AP_MODE ? WiFi.softAPIP() : WiFi.localIP();
+  const bool wifiOnline = WIFI_AP_MODE ? (WiFi.getMode() & WIFI_AP) != 0 : WiFi.status() == WL_CONNECTED;
   nokiaDisplayUpdate(outputVoltage, outputCurrent, outputCurrentLimit,
-                     networkName, ipAddress);
+                     networkName, ipAddress, wifiOnline);
  
   // Sequentially request new data if no command is pending
   if (!isCommandPending) {
@@ -855,6 +865,7 @@ void processIncomingCanMessages() {
   if(CAN0.checkReceive() == CAN_MSGAVAIL) {
     // Read the message
     CAN0.readMsgBuf(&rxId, &len, rxBuf);
+    nokiaDisplayNotifyCanMessage();
    
     // Log every received message to the Serial Monitor
     Serial.print("RX ID: 0x");
