@@ -327,10 +327,10 @@ void setup() {
   } else {
     Serial.println("Error Initializing MCP2515...");
     nokiaDisplayAddAsLog("error\n");
-    //nokiaDisplayAddAsLog("Reboot in 5s...\n");
-    //delay(ERROR_DISPLAY_DELAY);
-    //ESP.restart();
-    //return;
+    nokiaDisplayAddAsLog("Reboot in 5s...\n");
+    delay(ERROR_DISPLAY_DELAY);
+    ESP.restart();
+    return;
   }
  
   // The Adafruit library's begin() function handles setting the bitrate.
