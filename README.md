@@ -7,25 +7,51 @@ The code is entirely based on a [endless-sphere.com forum post](https://endless-
   <img src="images/web-top.png" width="480px" />
 </p>
 
+### Hardware
+
 The R48 unit is accessible via the CAN bus. To use this project to control the R48, get one ESP8266 board like a Wemos D1 m1n1 or a Lolin NodeMCU v3 and a MCP2515 board. These are readily available on a known chinese online shop.
 
 <p align="center">
   <img src="images/lolin-nodemcu-v3-board.jpg" width="300px"/> <img src="images/mcp2515-board.jpg" width="300pc" />
 </p>
 
+<p align="center">
+  <img src="images/d1_mini-board.jpg" width="300px"/> <img src="images/mcp2515-board.jpg" width="300pc" />
+</p>
+
 Connect the ESP8266 board to the MCP2515 board using the following pins. You can change them in the code if you want.
 
-MCP2515 Pin | ESP8266 Pin      | ESP8266 GPIO
-------------|------------------|----------------
-MOSI        | D7               | GPIO13
-MISO        | D6               | GPIO12
-SCK         | D5               | GPIO14
-CS          | D8               | GPIO15 (Flexible, can be any available GPIO)
-INT         | D1               | GPIO04 (Flexible, can be any available GPIO)
+| Lolin d1 mini | MCP2515 (pin)|
+----------------|---------------
+| D7            | SI      (5)  | 
+| D6            | SO      (4)  |
+| D5            | SCK     (6)  |
+| D8            | CS      (3)  | 
+| +3.3V         | VCC     (1)  | 
+| GND           | GND     (2)  | 
+| not connected | INT     (7)  |
+
+Optionally connect the Nokia 3310 LCD board using the following pins
+
+| Lolin D1 mini | LCD 3310 (pin)| 
+----------------|----------------
+| D7            | SDSI    (6)   |
+| D5            | SCLK    (7)   |
+| D4            | LED     (8)   | 
+| D3            | RES     (4)   | 
+| D2            | SCE     (3)   | 
+| D1            | D/C     (5)   | 
+| +3.3V         | VCC     (1)   |
+| GND           | GND     (2)   |
 
 Here's a reference pinout of the Lolin NodeMCU v3 board.
 <p align="center">
   <img src="images/lolin-nodemcu-v3.jpg" width="480px" />
+</p>
+
+Additionally there's now support to use a Nokia 3310 LCD (red board) as display the output of the unit, as well as the IP address and WiFi status. (**this is entirely optional**)
+<p align="center">
+  <img src="images/lcd3310-red-board.jpg" width="480px" />
 </p>
 
 ### Building the project
